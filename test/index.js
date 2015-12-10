@@ -651,7 +651,7 @@ describe('Nightmare', function () {
     it('should download a file', function*(){
       var counter = 0, downloadItem, statFail = false, finalState;
       nightmare.on('download', function(state, download){
-        if(state == 'start'){
+        if(state == 'started'){
           nightmare.emit('download', download);
           counter++;
         }
@@ -686,7 +686,7 @@ describe('Nightmare', function () {
       var counter = 0, downloadItem, statFail = false, finalState;
 
       nightmare.on('download', function(state, download){
-        if(state == 'start'){
+        if(state == 'started'){
           nightmare.emit('download', path.join(tmp_dir, 'subdir', 'nightmare-master.zip'), download);
           counter++;
         }
@@ -720,7 +720,7 @@ describe('Nightmare', function () {
       var counter = 0, downloadItem, finalState;
 
       nightmare.on('download', function(state, download){
-        if(state == 'start'){
+        if(state == 'started'){
           nightmare.emit('download', 'cancel', download);
           counter++;
         }
@@ -751,12 +751,12 @@ describe('Nightmare', function () {
         },
         ignoreDownloads:true
       });
-      nightmare.on('download', function(download){
-        nightmare.emit('download', download);
-        counter++;
-      });
       nightmare.on('download', function(state, download){
-        if(state == 'completed' || state == 'cancelled' || state == 'interrupted') {
+        if(state == 'started'){
+          nightmare.emit('download', 'cancel', download);
+          counter++;
+        }
+        else if(state == 'completed' || state == 'cancelled' || state == 'interrupted') {
           finalState = state;
           downloadItem = download;
           counter--;
