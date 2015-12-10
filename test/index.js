@@ -649,14 +649,17 @@ describe('Nightmare', function () {
     });
 
     it('should download a file', function*(){
-      var counter = 0, downloadItem, statFail = false;
-      nightmare.on('will-download', function(download){
-        nightmare.emit('will-download', download);
-        counter++;
-      });
-      nightmare.on('download-done', function(download){
-        downloadItem = download;
-        counter--;
+      var counter = 0, downloadItem, statFail = false, finalState;
+      nightmare.on('download', function(state, download){
+        if(state == 'start'){
+          nightmare.emit('download', download);
+          counter++;
+        }
+        else if(state == 'completed' || state == 'cancelled' || state == 'interrupted') {
+          finalState = state;
+          downloadItem = download;
+          counter--;
+        }
       });
 
       yield nightmare
@@ -675,20 +678,24 @@ describe('Nightmare', function () {
 
       downloadItem.should.be.ok;
       downloadItem.filename.should.equal('nightmare-master.zip');
-      downloadItem.state.should.equal('completed');
+      finalState.should.equal('completed');
       statFail.should.be.false;
     });
     
     it('should set a path for a download', function*(){
-      var counter = 0, downloadItem, statFail = false;
-      nightmare.on('will-download', function(download){
-        download.path = path.join(tmp_dir, 'subdir', 'nightmare-master.zip');
-        nightmare.emit('will-download', download);
-        counter++;
-      });
-      nightmare.on('download-done', function(download){
-        downloadItem = download;
-        counter--;
+      var counter = 0, downloadItem, statFail = false, finalState;
+
+      nightmare.on('download', function(state, download){
+        if(state == 'start'){
+          download.path = path.join(tmp_dir, 'subdir', 'nightmare-master.zip');
+          nightmare.emit('download', download);
+          counter++;
+        }
+        else if(state == 'completed' || state == 'cancelled' || state == 'interrupted') {
+          finalState = state;
+          downloadItem = download;
+          counter--;
+        }
       });
 
       yield nightmare
@@ -706,21 +713,25 @@ describe('Nightmare', function () {
       }
 
       downloadItem.should.be.ok;
-      downloadItem.state.should.equal('completed');
+      finalState.should.equal('completed');
       statFail.should.be.false;
     });
 
     it('should cancel a download', function*(){
-      var counter = 0, downloadItem, statFail = false;
-      nightmare.on('will-download', function(download){
-        download.cancel = true;
-        download.path = path.join(tmp_dir, 'nightmare-master-cancel.zip');
-        nightmare.emit('will-download', download);
-        counter++;
-      });
-      nightmare.on('download-done', function(download){
-        downloadItem = download;
-        counter--;
+      var counter = 0, downloadItem, statFail = false, finalState;
+
+      nightmare.on('download', function(state, download){
+        if(state == 'start'){
+          download.cancel = true;
+          download.path = path.join(tmp_dir, 'nightmare-master-cancel.zip');
+          nightmare.emit('download', download);
+          counter++;
+        }
+        else if(state == 'completed' || state == 'cancelled' || state == 'interrupted') {
+          finalState = state;
+          downloadItem = download;
+          counter--;
+        }
       });
 
       yield nightmare
@@ -738,26 +749,29 @@ describe('Nightmare', function () {
       }
 
       downloadItem.should.be.ok;
-      downloadItem.state.should.equal('cancelled');
+      finalState.should.equal('cancelled');
       statFail.should.be.true;
     });
 
     it('should ignore all downloads', function*(){
-      var counter = 0, downloadItem, statFail = false;
+      var counter = 0, downloadItem, statFail = false, finalState;
       nightmare = Nightmare({
         paths:{
           'downloads': tmp_dir
         },
         ignoreDownloads:true
       });
-      nightmare.on('will-download', function(download){
+      nightmare.on('download', function(download){
         download.path = path.join(tmp_dir, 'nightmare-master-ignore.zip');
-        nightmare.emit('will-download', download);
+        nightmare.emit('download', download);
         counter++;
       });
-      nightmare.on('download-done', function(download){
-        downloadItem = download;
-        counter--;
+      nightmare.on('download', function(state, download){
+        if(state == 'completed' || state == 'cancelled' || state == 'interrupted') {
+          finalState = state;
+          downloadItem = download;
+          counter--;
+        }
       });
 
       yield nightmare
@@ -775,6 +789,7 @@ describe('Nightmare', function () {
       }
 
       should.not.exist(downloadItem);
+      should.not.exist(finalState);
       statFail.should.be.true;
     });
   });
