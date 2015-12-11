@@ -649,27 +649,14 @@ describe('Nightmare', function () {
     });
 
     it('should download a file', function*(){
-      var counter = 0, downloadItem, statFail = false, finalState;
-      nightmare.on('download', function(state, download){
-        if(state == 'started'){
-          nightmare.emit('download', download);
-          counter++;
-        }
-        else if(state == 'completed' || state == 'cancelled' || state == 'interrupted') {
-          finalState = state;
-          downloadItem = download;
-          counter--;
-        }
-      });
+      var downloadItem, statFail = false;
 
       yield nightmare
         .goto('https://github.com/segmentio/nightmare')
-        .click('a[href="/segmentio/nightmare/archive/master.zip"]');
+        .click('a[href="/segmentio/nightmare/archive/master.zip"]')
+        .wait('downloads-complete');
 
-      while(counter > 0){
-        yield nightmare.wait(1000);
-      }
-
+      downloadItem = nightmare._downloads['nightmare-master.zip'];
       try {
         fs.statSync(path.join(tmp_dir, 'nightmare-master.zip'))
       } catch(e) {
@@ -678,32 +665,27 @@ describe('Nightmare', function () {
 
       downloadItem.should.be.ok;
       downloadItem.filename.should.equal('nightmare-master.zip');
-      finalState.should.equal('completed');
+      downloadItem.state.should.equal('completed');
       statFail.should.be.false;
     });
     
-    it('should set a path for a download', function*(){
-      var counter = 0, downloadItem, statFail = false, finalState;
+    it('should set a path for a specific download', function*(){
+      var downloadItem, statFail = false, finalState;
 
       nightmare.on('download', function(state, download){
         if(state == 'started'){
           nightmare.emit('download', path.join(tmp_dir, 'subdir', 'nightmare-master.zip'), download);
-          counter++;
         }
         else if(state == 'completed' || state == 'cancelled' || state == 'interrupted') {
           finalState = state;
           downloadItem = download;
-          counter--;
         }
       });
 
       yield nightmare
         .goto('https://github.com/segmentio/nightmare')
-        .click('a[href="/segmentio/nightmare/archive/master.zip"]');
-
-      while(counter > 0){
-        yield nightmare.wait(1000);
-      }
+        .click('a[href="/segmentio/nightmare/archive/master.zip"]')
+        .wait('downloads-complete');
 
       try {
         fs.statSync(path.join(tmp_dir, 'subdir', 'nightmare-master.zip'));
@@ -716,63 +698,42 @@ describe('Nightmare', function () {
       statFail.should.be.false;
     });
 
-    it('should cancel a download', function*(){
-      var counter = 0, downloadItem, finalState;
+    it('should cancel a specific download', function*(){
+      var downloadItem, finalState;
 
       nightmare.on('download', function(state, download){
         if(state == 'started'){
           nightmare.emit('download', 'cancel', download);
-          counter++;
         }
         else if(state == 'completed' || state == 'cancelled' || state == 'interrupted') {
           finalState = state;
           downloadItem = download;
-          counter--;
         }
       });
 
       yield nightmare
         .goto('https://github.com/segmentio/nightmare')
-        .click('a[href="/segmentio/nightmare/archive/master.zip"]');
-
-      while(counter > 0){
-        yield nightmare.wait(1000);
-      }
+        .click('a[href="/segmentio/nightmare/archive/master.zip"]')
+        .wait('downloads-complete');
 
       downloadItem.should.be.ok;
       finalState.should.equal('cancelled');
     });
 
     it('should ignore all downloads', function*(){
-      var counter = 0, downloadItem, finalState;
       nightmare = Nightmare({
         paths:{
           'downloads': tmp_dir
         },
         ignoreDownloads:true
       });
-      nightmare.on('download', function(state, download){
-        if(state == 'started'){
-          nightmare.emit('download', 'cancel', download);
-          counter++;
-        }
-        else if(state == 'completed' || state == 'cancelled' || state == 'interrupted') {
-          finalState = state;
-          downloadItem = download;
-          counter--;
-        }
-      });
 
       yield nightmare
         .goto('https://github.com/segmentio/nightmare')
-        .click('a[href="/segmentio/nightmare/archive/master.zip"]');
+        .click('a[href="/segmentio/nightmare/archive/master.zip"]')
+        .wait('downloads-complete');
 
-      while(counter > 0){
-        yield nightmare.wait(1000);
-      }
-      
-      should.not.exist(downloadItem);
-      should.not.exist(finalState);
+      Object.keys(nightmare._downloads).length.should.equal(0);
     });
   });
 });
