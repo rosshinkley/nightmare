@@ -668,6 +668,27 @@ describe('Nightmare', function () {
       downloadItem.state.should.equal('completed');
       statFail.should.be.false;
     });
+
+    it('should error when download time exceeds timeout', function*(){
+      var didFail = false;
+
+      nightmare = Nightmare({
+        paths:{
+          'downloads': tmp_dir
+        },
+        downloadTimeout: 1
+      });
+      try {
+        yield nightmare
+          .goto('https://github.com/segmentio/nightmare')
+          .click('a[href="/segmentio/nightmare/archive/master.zip"]')
+          .wait('downloads-complete');
+      } catch(e) {
+        didFail = true;
+      }
+
+      didFail.should.be.true;
+    });
     
     it('should set a path for a specific download', function*(){
       var downloadItem, statFail = false, finalState;
