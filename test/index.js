@@ -192,6 +192,15 @@ describe('Nightmare', function () {
         }, 'testparameter');
       title.should.equal('Evaluation -- testparameter');
     });
+
+    it('should evaluate javascript internal to the page', function*() {
+      var result = yield nightmare
+        .goto(fixture('evaluation'))
+        .evaluate(function () {
+          return someGlobalFunction();
+        });
+      result.should.equal('nightmare');
+    });
   });
 
   describe('manipulation', function () {
