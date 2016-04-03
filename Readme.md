@@ -10,7 +10,7 @@ Under the covers it uses [Electron](http://electron.atom.io/), which is similar 
 
 [Daydream](https://github.com/segmentio/daydream) is a complementary chrome extension built by [@stevenmiller888](https://github.com/stevenmiller888) that generates Nightmare scripts for you while you browse.
 
-Many thanks to [@matthewmueller](https://github.com/matthewmueller) for his help on Nightmare.
+Many thanks to [@matthewmueller](https://github.com/matthewmueller) and [@rosshinkley](https://github.com/rosshinkley) for their help on Nightmare.
 
 * [Examples](#examples)
 * [API](#api)
@@ -144,8 +144,21 @@ var nightmare = Nightmare({
 });
 ```
 
+##### openDevTools
+Optionally show the DevTools in the Electron window using `true`, or use an object hash containing `detatch` to show in a separate window. The hash gets passed to [`webContents.openDevTools()`](https://github.com/atom/electron/blob/master/docs/api/web-contents.md#webcontentsopendevtoolsoptions) to be handled.  This is also useful for testing purposes.  Note that this option is honored only if `show` is set to `true`.
+
+```js
+var nightmare = Nightmare({
+  openDevTools: true,
+  show: true
+});
+```
+
 #### .useragent(useragent)
 Set the `useragent` used by electron.
+
+#### .authentication(user, password)
+Set the `user` and `password` for accessing a web page using basic authentication. Be sure to set it before calling `.goto(url)`.
 
 #### .end()
 Complete any queue operations, disconnect and close the electron process.
@@ -277,6 +290,9 @@ This event is triggered if `console.log` is used on the page. But this event is 
 #### .screenshot([path][, clip])
 Takes a screenshot of the current page. Useful for debugging. The output is always a `png`. Both arguments are optional. If `path` is provided, it saves the image to the disk. Otherwise it returns a `Buffer` of the image data. If `clip` is provided (as [documented here](https://github.com/atom/electron/blob/master/docs/api/browser-window.md#wincapturepagerect-callback)), the image will be clipped to the rectangle.
 
+#### .html(path, saveType)
+Save the current page as html as files to disk at the given path. Save type options are [here](https://github.com/atom/electron/blob/master/docs/api/web-contents.md#webcontentssavepagefullpath-savetype-callback).
+
 #### .pdf(path, options)
 Saves a PDF to the specified `path`. Options are [here](https://github.com/atom/electron/blob/v0.35.2/docs/api/web-contents.md#webcontentsprinttopdfoptions-callback).
 
@@ -350,7 +366,7 @@ yield nightmare
 
 ### Extending Nightmare
 
-#### Nightmare.action(name, action|namespace)
+#### Nightmare.action(name, [electronAction|electronNamespace], action|namespace)
 
 You can add your own custom actions to the Nightmare prototype. Here's an example:
 
@@ -392,6 +408,29 @@ var background = yield Nightmare()
   .goto('http://google.com')
   .style.background()
 ```
+
+You can also add custom Electron actions.  The additional Electron action or namespace actions take `name`, `options`, `parent`, `win`, `renderer`, and `done`.  Note the Electron action comes first, mirroring how `.evaluate()` works.  For example:
+
+```javascript
+Nightmare.action('echo',
+  function(name, options, parent, win, renderer, done) {
+    parent.on('echo', function(message) {
+      parent.emit('log', 'echo: ' + message);
+    });
+    done();
+  },
+  function(message, done) {
+    this.child.emit('echo', message);
+    done();
+    return this;
+  });
+
+yield Nightmare()
+  .goto('http://example.org')
+  .echo('hello there!');
+```
+
+...would have a `nightmare:log` showing "hello there!" when run with `DEBUG=nightmare*`.
 
 #### .use(plugin)
 
