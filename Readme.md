@@ -33,8 +33,8 @@ var nightmare = Nightmare({ show: true })
 
 nightmare
   .goto('http://yahoo.com')
-  .type('input[title="Search"]', 'github nightmare')
-  .click('#uh-search-button')
+  .type('form[action*="/search"] [name=p]', 'github nightmare')
+  .click('form[action*="/search"] [type=submit]')
   .wait('#main')
   .evaluate(function () {
     return document.querySelector('#main .searchCenterMiddle li a').href
@@ -43,7 +43,9 @@ nightmare
   .then(function (result) {
     console.log(result)
   })
-
+  .catch(function (error) {
+    console.error('Search failed:', error);
+  });
 ```
 
 You can run this with:
@@ -64,8 +66,8 @@ describe('test yahoo search results', function() {
     var nightmare = Nightmare()
     var link = yield nightmare
       .goto('http://yahoo.com')
-      .type('input[title="Search"]', 'github nightmare')
-      .click('#UHSearchWeb')
+      .type('form[action*="/search"] [name=p]', 'github nightmare')
+      .click('form[action*="/search"] [type=submit]')
       .wait('#main')
       .evaluate(function () {
         return document.querySelector('#main .searchCenterMiddle li a').href
@@ -213,7 +215,7 @@ Enters the `text` provided into the `selector` element.  Empty or falsey values 
 
 `.type()` mimics a user typing in a textbox and will emit the proper keyboard events
 
-Key presses can also be fired using Unicode values with `.type()`. For example, if you wanted to fire an enter key press, you would  write `.type('document', '\u000d')`. 
+Key presses can also be fired using Unicode values with `.type()`. For example, if you wanted to fire an enter key press, you would  write `.type('document', '\u000d')`.
 
 > If you don't need the keyboard events, consider using `.insert()` instead as it will be faster and more robust.
 
@@ -441,25 +443,23 @@ var background = yield Nightmare()
 You can also add custom Electron actions.  The additional Electron action or namespace actions take `name`, `options`, `parent`, `win`, `renderer`, and `done`.  Note the Electron action comes first, mirroring how `.evaluate()` works.  For example:
 
 ```javascript
-Nightmare.action('echo',
+Nightmare.action('clearCache',
   function(name, options, parent, win, renderer, done) {
-    parent.on('echo', function(message) {
-      parent.emit('log', 'echo: ' + message);
+    parent.respondTo('clearCache', function(done) {
+      win.webContents.session.clearCache(done);
     });
     done();
   },
   function(message, done) {
-    this.child.emit('echo', message);
-    done();
-    return this;
+    this.child.call('clearCache', done);
   });
 
 yield Nightmare()
-  .goto('http://example.org')
-  .echo('hello there!');
+  .clearCache()
+  .goto('http://example.org');
 ```
 
-...would have a `nightmare:log` showing "hello there!" when run with `DEBUG=nightmare*`.
+...would clear the browser’s cache before navigating to `example.org`.
 
 #### .use(plugin)
 
