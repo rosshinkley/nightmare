@@ -4,7 +4,7 @@
   "license": "MIT",
   "main": "lib/nightmare.js",
   "scripts": {
-    "test": "make test"
+    "test": "node_modules/.bin/mocha --opts test/mocha.opts test/index.js"
   },
   "repository": {
     "type": "git",
