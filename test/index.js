@@ -51,8 +51,8 @@ describe('Nightmare', function () {
 
   it('should be constructable', function*() {
     var nightmare = Nightmare();
-    nightmare.should.be.ok;
     yield nightmare.end();
+    nightmare.should.be.ok;
   });
 
   it('should have version information', function*(){
@@ -250,8 +250,8 @@ describe('Nightmare', function () {
         });
     });
 
-    it('should not fail for a redirect', function() {
-      return nightmare.goto(fixture('redirect?url=%2Fnavigation'));
+    it('should not fail for a redirect', function(done) {
+      return nightmare.goto(fixture('redirect?url=%2Fnavigation')).then(()=>done());
     });
 
     it('should fail for a redirect to an invalid URL', function(done) {
@@ -265,7 +265,7 @@ describe('Nightmare', function () {
         });
     });
 
-    it('should succeed properly if request handler is present', function() {
+    it('should succeed properly if request handler is present', function*() {
       Nightmare.action(
         'monitorRequest',
         function(name, options, parent, win, renderer, done) {
@@ -282,7 +282,7 @@ describe('Nightmare', function () {
           return this;
         });
 
-      return Nightmare({webPreferences: {partition: 'test-partition'}})
+      yield Nightmare({webPreferences: {partition: 'test-partition'}})
         .goto(fixture('navigation'))
         .end();
     });
@@ -304,14 +304,19 @@ describe('Nightmare', function () {
           return this;
         });
 
-      Nightmare({webPreferences: {partition: 'test-partition'}})
-        .goto('http://this-is-not-a-real-domain.com')
-        .then(function() {
-          done(new Error('Navigation to an invalid domain succeeded'));
-        })
-        .catch(function(error) {
-          done();
-        });
+        var nightmare = Nightmare({webPreferences: {partition: 'test-partition'}});
+        nightmare
+          .goto('http://this-is-not-a-real-domain.com')
+          .then(function() {
+            nightmare.end.then(function(){
+              done(new Error('Navigation to an invalid domain succeeded'));
+            });
+          })
+          .catch(function(error) {
+            nightmare.end(function(){
+              done();
+            });
+          });
     });
 
     it('should support javascript URLs', function*() {
@@ -346,7 +351,9 @@ describe('Nightmare', function () {
     var nightmare;
 
     beforeEach(function() {
-      nightmare = Nightmare();
+      nightmare = Nightmare({
+        webPreferences: {partition: 'test-partition' + Math.random()}
+      });
     });
 
     afterEach(function*() {
@@ -418,7 +425,9 @@ describe('Nightmare', function () {
     var nightmare;
 
     beforeEach(function() {
-      nightmare = Nightmare();
+      nightmare = Nightmare({
+        webPreferences: {partition: 'test-partition' + Math.random()}
+      });
     });
 
     afterEach(function*() {
@@ -428,7 +437,7 @@ describe('Nightmare', function () {
     it('should inject javascript onto the page', function*() {
       var globalNumber = yield nightmare
         .goto(fixture('manipulation'))
-        .inject('js', 'test/files/globals.js')
+        .inject('js', path.resolve(__dirname, 'files','globals.js'))
         .evaluate(function () {
           return globalNumber;
         });
@@ -436,7 +445,7 @@ describe('Nightmare', function () {
 
       var numAnchors = yield nightmare
         .goto(fixture('manipulation'))
-        .inject('js', 'test/files/jquery-2.1.1.min.js')
+        .inject('js', path.resolve(__dirname, 'files', 'jquery-2.1.1.min.js'))
         .evaluate(function () {
           return $('h1').length;
         });
@@ -446,7 +455,7 @@ describe('Nightmare', function () {
     it('should inject javascript onto the page ending with a comment', function*() {
       var globalNumber = yield nightmare
         .goto(fixture('manipulation'))
-        .inject('js', 'test/files/globals.js')
+        .inject('js', path.resolve(__dirname, 'files', 'globals.js'))
         .evaluate(function () {
           return globalNumber;
         });
@@ -454,7 +463,7 @@ describe('Nightmare', function () {
 
       var numAnchors = yield nightmare
         .goto(fixture('manipulation'))
-        .inject('js', 'test/files/jquery-1.9.0.min.js')
+        .inject('js', path.resolve(__dirname, 'files', 'jquery-1.9.0.min.js'))
         .evaluate(function () {
           return $('h1').length;
         });
@@ -464,8 +473,8 @@ describe('Nightmare', function () {
     it('should inject css onto the page', function*() {
       var color = yield nightmare
         .goto(fixture('manipulation'))
-        .inject('js', 'test/files/jquery-2.1.1.min.js')
-        .inject('css', 'test/files/test.css')
+        .inject('js', path.resolve(__dirname, 'files', 'jquery-2.1.1.min.js'))
+        .inject('css', path.resolve(__dirname, 'files', 'test.css'))
         .evaluate(function () {
           return $('body').css('background-color');
         });
@@ -475,8 +484,8 @@ describe('Nightmare', function () {
     it('should not inject unsupported types onto the page', function*() {
       var color = yield nightmare
         .goto(fixture('manipulation'))
-        .inject('js', 'test/files/jquery-2.1.1.min.js')
-        .inject('pdf', 'test/files/test.css')
+        .inject('js', path.resolve(__dirname, 'files', 'jquery-2.1.1.min.js'))
+        .inject('pdf', path.resolve(__dirname, 'files', 'test.css'))
         .evaluate(function () {
           return $('body').css('background-color');
         });
@@ -713,12 +722,15 @@ describe('Nightmare', function () {
     });
   });
 
+
   describe('cookies', function() {
     var nightmare;
 
     beforeEach(function() {
-      nightmare = Nightmare({webPreferences: {partition: 'test-partition'}})
-        .goto(fixture('cookie'));
+      nightmare = Nightmare({
+        webPreferences: {partition: 'test-partition' + Math.random()}
+      })
+      .goto(fixture('cookie'));
     });
 
     afterEach(function*() {
@@ -852,7 +864,9 @@ describe('Nightmare', function () {
     })
 
     beforeEach(function() {
-      nightmare = Nightmare();
+      nightmare = Nightmare({
+        webPreferences: {partition: 'test-partition' + Math.random()}
+      });
     });
 
     afterEach(function*() {
@@ -1009,7 +1023,9 @@ describe('Nightmare', function () {
     var nightmare;
 
     beforeEach(function() {
-      nightmare = Nightmare();
+      nightmare = Nightmare({
+        webPreferences: {partition: 'test-partition' + Math.random()}
+      });
     });
 
     afterEach(function*() {
@@ -1404,6 +1420,8 @@ describe('Nightmare', function () {
         })
 
       value.should.equal('custom')
+
+      yield nightmare.end();
     })
   })
 
@@ -1516,6 +1534,8 @@ describe('Nightmare', function () {
     });
 
     it('should log a warning when replacing a responder', function*() {
+      var logged = false;
+
       Nightmare.action('uhoh',
         function(_, __, parent, ___, ____, done) {
           parent.respondTo('test', function(done) {
@@ -1527,18 +1547,91 @@ describe('Nightmare', function () {
           this.child.call('test', done);
         });
 
-      var logged = false;
-      yield Nightmare()
-        .on('nightmare:ipc:debug', function(message) {
-          if (message.toLowerCase().indexOf('replacing') > -1) {
-            logged = true;
-          }
-        })
+        var instance = Nightmare();
+        //tack an `on` handler prior to the action handlers
+        instance._queue.splice(4, 0, [function(done){
+          this.child.on('nightmare:ipc:debug', function(message){
+            if (message.toLowerCase().indexOf('replacing') > -1) {
+              logged = true;
+            }
+          });
+          done();
+        }, []]);
+      yield instance
         .goto('about:blank')
         .end();
       logged.should.be.true;
     });
   });
+
+  if(process.env.CIRCLE_PROJECT_REPONAME || process.env.NIGHTMARE_USE_XVFB){
+    describe('process management with dbus and xvfb', function(){
+      it('should not have any handles after instances have ended', function*(){
+        var nightmare1 = Nightmare();
+        var nightmare2 = Nightmare();
+
+        yield nightmare1.goto(fixture('simple'));
+        yield nightmare2.goto(fixture('simple'));
+
+        Nightmare.xvfbHandles.should.equal(2);
+
+        yield nightmare1.end();
+        yield nightmare2.end();
+
+        Nightmare.xvfbHandles.should.equal(0);
+      });
+
+      it('should end xvfb and dbus after the last instance', function*(){
+        var nightmare1 = Nightmare();
+        var nightmare2 = Nightmare();
+
+        yield nightmare1.goto(fixture('simple'));
+        yield nightmare2.goto(fixture('simple'));
+
+        Nightmare.xvfbProcess.killed.should.be.false;
+        Nightmare.dbusProcess.killed.should.be.false;
+
+        yield nightmare1.end();
+ 
+        Nightmare.xvfbProcess.killed.should.be.false;
+        Nightmare.dbusProcess.killed.should.be.false;
+
+        yield nightmare2.end();
+
+        Nightmare.xvfbProcess.killed.should.be.true;
+        Nightmare.dbusProcess.killed.should.be.true;
+      });
+
+      it('should maintain xvfb and dbus instances for overlapping instances', function(done){
+        var p1 = Nightmare()
+          .goto(fixture('simple'))
+          .wait(1000)
+          .end()
+          .then(function() {
+            Nightmare.xvfbProcess.killed.should.be.false;
+            Nightmare.dbusProcess.killed.should.be.false;
+          });
+
+        var p2 = new Promise(function(resolve){
+          setTimeout(resolve, 500);
+        }).then(function(){
+          return Nightmare()
+            .goto(fixture('simple'))
+            .wait(1000)
+            .title()
+            .end()
+            .then(function() {
+              Nightmare.xvfbProcess.killed.should.be.true;
+              Nightmare.dbusProcess.killed.should.be.true;
+            });
+        });
+
+        Promise.all([p1, p2]).then(function(){
+          done();
+        });
+      });
+    });
+  }
 });
 
 /**
@@ -1559,10 +1652,13 @@ function fixture(path) {
 function withDeprecationTracking(constructor) {
   var newConstructor = function() {
     var instance = constructor.apply(this, arguments);
-    instance.proc.stderr.pipe(split()).on('data', (line) => {
-      if (line.indexOf('deprecated') > -1) {
-        newConstructor.__deprecations.add(line);
-      }
+    instance.queue(function(done){
+      this.electronProcess.stderr.pipe(split()).on('data', (line) => {
+        if (line.indexOf('deprecated') > -1) {
+          newConstructor.__deprecations.add(line);
+        }
+      });
+      done();
     });
     return instance;
   };
