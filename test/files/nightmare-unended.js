@@ -6,5 +6,5 @@ var nightmare = Nightmare();
 nightmare
   .goto('about:blank')
   .run(function() {
-    process.send(nightmare.proc.pid);
+    process.send(nightmare.electronProcess.pid);
   });
