@@ -1564,7 +1564,7 @@ describe('Nightmare', function () {
     });
   });
 
-  if(process.env.CIRCLE_PROJECT_REPONAME || process.env.NIGHTMARE_USE_XVFB){
+  if(process.env.NIGHTMARE_USE_XVFB){
     describe('process management with dbus and xvfb', function(){
       it('should not have any handles after instances have ended', function*(){
         var nightmare1 = Nightmare();
