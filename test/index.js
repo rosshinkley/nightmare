@@ -1610,6 +1610,7 @@ describe('Nightmare', function () {
           .then(function() {
             Nightmare.xvfbProcess.killed.should.be.false;
             Nightmare.dbusProcess.killed.should.be.false;
+            return true;
           });
 
         var p2 = new Promise(function(resolve){
@@ -1617,12 +1618,13 @@ describe('Nightmare', function () {
         }).then(function(){
           return Nightmare()
             .goto(fixture('simple'))
-            .wait(1000)
+            .wait(1500)
             .title()
             .end()
             .then(function() {
               Nightmare.xvfbProcess.killed.should.be.true;
               Nightmare.dbusProcess.killed.should.be.true;
+              return true;
             });
         });
 
