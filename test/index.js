@@ -1351,6 +1351,17 @@ describe('Nightmare', function () {
       cookies = yield nightmare.cookies.get();
       cookies.length.should.equal(0);
     })
+
+    it('should return a meaningful error when setting cookies prior to navigation', function(done) {
+      nightmare = Nightmare({webPreferences: {partition: 'test-partition'}})
+      nightmare
+        .cookies.set('hi', 'hello')
+        .then(() => done("cookie should not have been settable"))
+        .catch(err => {
+          err.message.should.equal("Please navigate to a URL prior to setting cookies.");
+          done();
+        });
+    })
   });
 
   describe('rendering', function () {

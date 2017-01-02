@@ -486,7 +486,8 @@ Get all the cookies for the current url. If you'd like get all cookies for all u
 
 #### .cookies.set(name, value)
 
-Set a cookie's `name` and `value`. Most basic form, the url will be the current url.
+Set a cookie's `name` and `value`. Most basic form, the url will be the current url.  Please note that cookies are only settable after navigating away from the default page.
+
 
 #### .cookies.set(cookie)
 
